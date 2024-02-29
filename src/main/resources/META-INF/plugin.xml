@@ -5,14 +5,51 @@
     <vendor>louislou2</vendor>
 
     <depends>com.intellij.modules.platform</depends>
+    <depends>com.intellij.modules.java</depends>
 
-    <resource-bundle>messages.MyBundle</resource-bundle>
+<!--    <resource-bundle>messages.MyBundle</resource-bundle>-->
 
+<!--    <extensions defaultExtensionNs="com.intellij">-->
+<!--        <toolWindow factoryClass="com.github.louislou2.jprotobuf.toolWindow.MyToolWindowFactory" id="MyToolWindow"/>-->
+<!--    </extensions>-->
+
+<!--    <applicationListeners>-->
+<!--        <listener class="com.github.louislou2.jprotobuf.listeners.MyApplicationActivationListener" topic="com.intellij.openapi.application.ApplicationActivationListener"/>-->
+<!--    </applicationListeners>-->
+    <actions>
+        <action id="HelloWorldActionID" class="com.github.louislou2.jprotobuf.HelloWorldAction" text="Hello World"
+                description="HelloWorldAction">
+            <add-to-group group-id="ToolsMenu" anchor="first"/>
+        </action>
+        <action id="NavToolBarID" class="com.github.louislou2.jprotobuf.NavToolBar" text="NavToolBar_name"
+                description="NavToolBar_desc">
+            <add-to-group group-id="NavBarToolBar" anchor="first"/>
+        </action>
+        <group
+            id="CustomDefaultActionGroupID"
+            class="com.github.louislou2.jprotobuf.CustomDefaultActionGroup"
+            text="CustomDefaultActionGroup_name"
+            description="CustomDefaultActionGroup_desc"
+            popup="true">
+            <add-to-group group-id="EditorPopupMenu" anchor="first"/>
+            <action id="CustomedGroupedAction_id" class="com.github.louislou2.jprotobuf.CustomedGroupedAction"
+                    text="CustomedGroupedAction_name" description="CustomedGroupedAction_desc"/>
+        </group>
+        <action id="EditerPopForAFile_id" class="com.github.louislou2.jprotobuf.EditerPopForCurrentFile" text="Generate Protobuf Java Class"
+                description="Generate protobuf java class for current java class">
+            <add-to-group group-id="EditorPopupMenu" anchor="first"/>
+        </action>
+    </actions>
+    <projectListeners>
+        <listener
+                class="com.github.louislou2.jprotobuf.listener.Listener1"
+                topic="com.github.louislou2.jprotobuf.notifier.ChangeNotifier1"/>
+    </projectListeners>
     <extensions defaultExtensionNs="com.intellij">
-        <toolWindow factoryClass="com.github.louislou2.jprotobuf.toolWindow.MyToolWindowFactory" id="MyToolWindow"/>
+        <applicationConfigurable 
+                parentId="tools"
+                instance="com.github.louislou2.jprotobuf.configurable.MultiConfigurable" 
+                id="com.github.louislou2.jprotobuf.configurable.MultiConfigurable.id"
+                displayName="JProtobuf"/>
     </extensions>
-
-    <applicationListeners>
-        <listener class="com.github.louislou2.jprotobuf.listeners.MyApplicationActivationListener" topic="com.intellij.openapi.application.ApplicationActivationListener"/>
-    </applicationListeners>
 </idea-plugin>

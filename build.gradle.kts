@@ -18,12 +18,21 @@ version = properties("pluginVersion").get()
 
 // Configure project's dependencies
 repositories {
+    maven(url = "https://maven.aliyun.com/repository/public/")
+    maven(url = "https://maven.aliyun.com/repository/spring/")
+    mavenLocal()
     mavenCentral()
 }
 
 // Dependencies are managed with Gradle version catalog - read more: https://docs.gradle.org/current/userguide/platforms.html#sub:version-catalog
 dependencies {
-//    implementation(libs.annotations)
+    // implementation(libs.annotations)
+    // lombok
+    compileOnly("org.projectlombok:lombok:1.18.20")
+    annotationProcessor("org.projectlombok:lombok:1.18.20")
+    testCompileOnly("org.projectlombok:lombok:1.18.20")
+    testAnnotationProcessor("org.projectlombok:lombok:1.18.20")
+    implementation("com.intellij:forms_rt:7.0.3")
 }
 
 // Set the JVM language level used to build the project. Use Java 11 for 2020.3+, and Java 17 for 2022.2+.
