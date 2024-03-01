@@ -50,10 +50,10 @@ public class JavaClassAnalyser {
     private static String getProtoType(String javaType){
         return typeMap.getOrDefault(getUnboxingType(javaType), "bytes");
     }
-    public static void writeJavaToProto(JavaClassInfo javaClassInfo, Project project, String corProtoPath){
-        String protoContent = getProtoString(javaClassInfo);
-        PlainTextFileWriter.createFile(project, corProtoPath, javaClassInfo.getClassName() + ".proto", protoContent);
-    }
+    //public static void writeJavaToProto(JavaClassInfo javaClassInfo, Project project, String corProtoPath){
+    //    String protoContent = getProtoString(javaClassInfo);
+    //    PlainTextFileWriter.createFile(project, corProtoPath, javaClassInfo.getClassName() + ".proto", protoContent);
+    //}
     // 现在还未确定message的名字和outer_classname的确定办法，先用两个暂时接口
     public static String getOuterClassName(String className){
         return className+"Proto";
@@ -65,19 +65,18 @@ public class JavaClassAnalyser {
         String className=javaClassInfo.getClassName();
         String messageName=getMessageName(className);
         String outerClassName=getOuterClassName(className);
-        StringBuilder protoFileContent = new StringBuilder();
-        protoFileContent.append("syntax = \"proto3\";\n\n");
-        protoFileContent.append("option java_outer_classname = ");
-        protoFileContent.append(outerClassName);
-        protoFileContent.append('\n');
-        protoFileContent.append("message ").append(messageName).append(" {\n");
+        StringBuilder content = new StringBuilder();
+        content.append("syntax = \"proto3\";\n\n");
+        content.append("option java_outer_classname = ");
+        content.append('\"'+outerClassName+"\";\n\n");
+        content.append("message ").append(messageName).append(" {\n");
         List<Pair<String,String>> fields=javaClassInfo.getFields();
         for (int i = 0; i < javaClassInfo.getFields().size(); i++) {
             String fieldType = fields.get(i).getSecond();
             String protoType = getProtoType(fieldType);
-            protoFileContent.append("    ").append(protoType).append(" ").append(fields.get(i).getFirst()).append(" = ").append(i + 1).append(";\n");
+            content.append("    ").append(protoType).append(" ").append(fields.get(i).getFirst()).append(" = ").append(i + 1).append(";\n");
         }
-        protoFileContent.append("}\n");
-        return protoFileContent.toString();
+        content.append("}\n");
+        return content.toString();
     }
 }

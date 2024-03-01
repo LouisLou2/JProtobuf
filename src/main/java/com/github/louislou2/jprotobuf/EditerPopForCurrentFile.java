@@ -3,15 +3,14 @@ package com.github.louislou2.jprotobuf;
 import com.github.louislou2.jprotobuf.model.JavaClassInfo;
 import com.github.louislou2.jprotobuf.service.JavaClassAnalyser;
 import com.github.louislou2.jprotobuf.service.PathManager;
+import com.github.louislou2.jprotobuf.service.ProtoGenerator;
 import com.github.louislou2.jprotobuf.service.PsiAnalyser;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
-import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.*;
 
@@ -20,15 +19,18 @@ public class EditerPopForCurrentFile extends AnAction {
     public void actionPerformed(AnActionEvent e) {
         // TODO: insert action logic here
         //Messages.showInfoMessage("wow", "uu");
+        //ProtoGenerator.writeProtoClassByProtoFile("","","");
         Project project=e.getProject();
-        //PathManager.testPath(project);
-        //JavaClassInfo javaClassInfo=getInfoNowEditing(project);
         PsiFile psiFileNowEditing = getPsiFileNowEditing(project);
-        //VirtualFile nowEditingVir= psiFileNowEditing.getVirtualFile();
         String nowEditingPath=psiFileNowEditing.getVirtualFile().getPath();
-        String corProtoDir=PathManager.getCorrespondingProtoDir(nowEditingPath);
         JavaClassInfo javaClassInfo = getInfo(psiFileNowEditing);
-        JavaClassAnalyser.writeJavaToProto(javaClassInfo,project,corProtoDir);
+        ProtoGenerator.writeProtoClassFile_Default(javaClassInfo,project,nowEditingPath);
+        
+        
+        //PathManager.testPath(project);
+        //VirtualFile nowEditingVir= psiFileNowEditing.getVirtualFile();
+        //String corProtoDir=PathManager.getCorProtoDir(nowEditingPath);
+        //JavaClassAnalyser.writeJavaToProto(javaClassInfo,project,corProtoDir);
     }
     public PsiFile getPsiFileNowEditing(Project project){
         Editor editor = FileEditorManager.getInstance(project).getSelectedTextEditor();

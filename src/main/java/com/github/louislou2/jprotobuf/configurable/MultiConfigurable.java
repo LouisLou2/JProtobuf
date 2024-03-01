@@ -96,16 +96,16 @@ public class MultiConfigurable implements Configurable {
         ProjectSettingData prData=settings.getState().projectSettingData;
         
         if(settingChanged[0]){
-            apData.setProtocPath(mySettingPage.protocPath.getText());
+            apData.setProtocPath(mySettingPage.protocPath.getText().replace('\\', '/'));
         }
         if(settingChanged[1]){
-            prData.setPojoDir(mySettingPage.pojoDir.getText());
+            prData.setPojoDir(mySettingPage.pojoDir.getText().replace('\\', '/'));
         }
         if(settingChanged[2]){
-            prData.setProtoDir(mySettingPage.protoDir.getText());
+            prData.setProtoDir(mySettingPage.protoDir.getText().replace('\\', '/'));
         }
         if(settingChanged[3]){
-            prData.setProtoClassDir(mySettingPage.protoClassDir.getText());
+            prData.setProtoClassDir(mySettingPage.protoClassDir.getText().replace('\\', '/'));
         }
     }
     /**
