@@ -3,8 +3,18 @@ package com.github.louislou2.jprotobuf.service;
 import com.github.louislou2.jprotobuf.persistent.PluginSettingData;
 import com.github.louislou2.jprotobuf.persistent.ProjectSettingData;
 import com.github.louislou2.jprotobuf.util.PathVirtualUtil;
+import com.intellij.openapi.editor.Document;
+import com.intellij.openapi.editor.Editor;
+import com.intellij.openapi.fileEditor.FileEditorManager;
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.psi.PsiClass;
+import com.intellij.psi.PsiDocumentManager;
+import com.intellij.psi.PsiFile;
+import kotlinx.html.A;
+
+import java.util.function.Function;
 
 public class PathManager {
     public static VirtualFile pojoDirVir;
@@ -27,7 +37,13 @@ public class PathManager {
         protoDirVir = PathVirtualUtil.getVF(protoDir);
         protoClassVir = PathVirtualUtil.getVF(protoClassDir);
     }
-
+    public static String getDefineLocation(PsiClass aClass){
+        return aClass.getNavigationElement().getContainingFile().getVirtualFile().getPath();
+    }
+    public static String getRelaCorProtoPath(PsiClass aClass, Function<PsiClass,String>getFileName){
+        String theJavaPath=getDefineLocation(aClass);
+        return getRelaCorProtoDir(theJavaPath)+'/'+getFileName.apply(aClass);
+    }
     /**
      * 在三结构统一的规则下
      * 获取.proto文件所在的文件夹相对于protoDir的相对路径,前后都不带/
@@ -38,6 +54,24 @@ public class PathManager {
     public static String getRelaCorProtoDir(String theJavaPath){
         int lastSlashIndex=theJavaPath.lastIndexOf('/');
         return theJavaPath.substring(pojoDir.length()+1, lastSlashIndex);
+    }
+    public static PsiFile getPsiFileNowEditing(Project project){
+        Editor editor = FileEditorManager.getInstance(project).getSelectedTextEditor();
+        assert editor != null;
+        Document document = editor.getDocument();
+        return PsiDocumentManager.getInstance(project).getPsiFile(document);
+    }
+
+    /**
+     * 有时既需要PsiFile有需要path，请不要额外再次调用，因为获取到PsiFile自然可以通过paiFile.getVirtualFile().getPath()得到
+     * @param project
+     * @return
+     */
+    public static String getPathNowEditing(Project project){
+        Editor editor = FileEditorManager.getInstance(project).getSelectedTextEditor();
+        // String url=editor.getVirtualFile().getUrl(); 结果形式: file://D:/SourceCode/a/User.java
+        assert editor != null;
+        return editor.getVirtualFile().getPath();//结果形式: D:/SourceCode/a/User.java
     }
     //public static String getCorProtoDirByRela(String relaPath){
     //    return protoDir+"/"+relaPath;

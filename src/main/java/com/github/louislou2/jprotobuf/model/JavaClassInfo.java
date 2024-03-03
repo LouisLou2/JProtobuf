@@ -6,8 +6,8 @@ import java.util.List;
 
 public class JavaClassInfo {
     private String className;
-    private List<Pair<String,String>>fields;
-    public JavaClassInfo(String className, List<Pair<String, String>> fields) {
+    private List<ClassField>fields;
+    public JavaClassInfo(String className, List<ClassField> fields) {
         this.className = className;
         this.fields = fields;
     }
@@ -17,10 +17,10 @@ public class JavaClassInfo {
     public void setClassName(String className) {
         this.className = className;
     }
-    public List<Pair<String, String>> getFields() {
+    public List<ClassField> getFields() {
         return fields;
     }
-    public void setFields(List<Pair<String, String>> fields) {
+    public void setFields(List<ClassField> fields) {
         this.fields = fields;
     }
 }

@@ -6,6 +6,7 @@ import com.github.louislou2.jprotobuf.persistent.PluginSettingData;
 import com.github.louislou2.jprotobuf.util.PathVirtualUtil;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
+import com.intellij.psi.PsiClass;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -29,24 +30,17 @@ public class ProtoGenerator {
         PlainTextFileWriter.createFile(project, corProtoPath, protoFileName, protoFileContent);
         return relaProtoDir+"/"+protoFileName;
     }
-    public static void writeProtoFile(JavaClassInfo classInfo,Project project,String targetFolder){
-        String protoFileContent = JavaClassAnalyser.getProtoString(classInfo);
-        String protoFileName = classInfo.getClassName() + ".proto";
-        PlainTextFileWriter.createFile(project, targetFolder, protoFileName, protoFileContent);
-    }
+
     /**
-     * 按照制定好的规则来书写.proto文件，
-     * 即.proto文件关于protoDir的相对位置==.java关于pojoDir的相对位置==protoBuf化的.java相对于protoClassDir的位置
+     * 分析提供的classInfo 生成.proto文件内容，并写入targetFolder
+     * @param classInfo
+     * @param project
+     * @param targetFolder
      */
-    public static void writeProtoClassFile_Default(JavaClassInfo classInfo,Project project,String javaFilePath){
-        String searchingFolder=PathManager.protoDir;
-        String relaThisProtoDir=PathManager.getRelaCorProtoDir(javaFilePath);
-        String protoTargetFolder=PathManager.protoDir+"/"+relaThisProtoDir;
-        writeProtoFile(classInfo,project,protoTargetFolder);
-        String relaProtoFilePath=relaThisProtoDir+"/"+classInfo.getClassName()+".proto";
-        String distDir=PathManager.protoClassDir+"/"+relaThisProtoDir;
-        //FileVisual.printContent(searchingFolder+"/"+relaProtoFilePath);
-        writeProtoClassByProtoFile(searchingFolder,relaProtoFilePath,distDir);
+    public static void writeProtoFile(PsiClass aclass, Project project, String targetFolder){
+        String protoFileContent = JavaParser.getProtoString(aclass);
+        String protoFileName = JavaParser.getProtoFileName(aclass);
+        PlainTextFileWriter.createFile(project, targetFolder, protoFileName, protoFileContent);
     }
     public static void writeProtoClassByProtoFile(String searchingFolder,String relaProtoFilePath,String distDir){
         PathVirtualUtil.createDirIfNonexistent(distDir);

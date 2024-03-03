@@ -26,19 +26,21 @@
             <add-to-group group-id="NavBarToolBar" anchor="first"/>
         </action>
         <group
-            id="CustomDefaultActionGroupID"
-            class="com.github.louislou2.jprotobuf.CustomDefaultActionGroup"
-            text="CustomDefaultActionGroup_name"
-            description="CustomDefaultActionGroup_desc"
+            id="ProtoForCurrent_Group_id"
+            class="com.github.louislou2.jprotobuf.action.ProtoForCurrent_Group"
+            text="Generate Protobuf Class"
+            description="Generate protobuf java class for current java class"
             popup="true">
             <add-to-group group-id="EditorPopupMenu" anchor="first"/>
-            <action id="CustomedGroupedAction_id" class="com.github.louislou2.jprotobuf.CustomedGroupedAction"
-                    text="CustomedGroupedAction_name" description="CustomedGroupedAction_desc"/>
+            <action id="ProtoForCurrentDefault_id" class="com.github.louislou2.jprotobuf.action.ProtoForCurrentDefault" text="Use Specified Directory"
+                    description="Generate protobuf java class for current java class using specified directory"/>
+            <action id="ProtoForCurrentCustom_id" class="com.github.louislou2.jprotobuf.action.ProtoForCurrentCustom"
+                    text="Use Custom Directory" description="Generate protobuf java class for current java class using custom directory"/>
         </group>
-        <action id="EditerPopForAFile_id" class="com.github.louislou2.jprotobuf.EditerPopForCurrentFile" text="Generate Protobuf Java Class"
-                description="Generate protobuf java class for current java class">
-            <add-to-group group-id="EditorPopupMenu" anchor="first"/>
-        </action>
+<!--        <action id="EditerPopForAFile_id" class="com.github.louislou2.jprotobuf.action.ProtoForCurrentDefault" text="Generate Protobuf Java Class"-->
+<!--                description="Generate protobuf java class for current java class">-->
+<!--            <add-to-group group-id="EditorPopupMenu" anchor="first"/>-->
+<!--        </action>-->
     </actions>
     <projectListeners>
         <listener

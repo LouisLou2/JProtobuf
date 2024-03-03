@@ -38,7 +38,7 @@ public class PlainTextFileWriter {
             assert document != null;
             document.setText(content);
             /* 提交文档更改:commitDocument方式会把修改责任交给平台，
-            所以对于文件系统的修改肯呢个不会立即生效，当接下来的操作不会立即依赖这个文件，
+            所以对于文件系统的修改可能不会立即生效，当接下来的操作不会立即依赖这个文件，
             使用commitDocument就够了
              */
             // psiDocumentManager.commitDocument(document);
