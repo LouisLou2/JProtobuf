@@ -1,7 +1,5 @@
 package com.github.louislou2.jprotobuf.model;
 
-import com.intellij.openapi.util.Pair;
-
 import java.util.List;
 
 public class JavaClassInfo {

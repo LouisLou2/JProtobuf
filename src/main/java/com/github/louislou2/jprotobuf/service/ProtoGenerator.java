@@ -1,6 +1,4 @@
 package com.github.louislou2.jprotobuf.service;
-
-import com.github.louislou2.jprotobuf.model.JavaClassInfo;
 import com.github.louislou2.jprotobuf.util.PathVirtualUtil;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;

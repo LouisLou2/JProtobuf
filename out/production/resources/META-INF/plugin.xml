@@ -1,0 +1,57 @@
+<!-- Plugin Configuration File. Read more: https://plugins.jetbrains.com/docs/intellij/plugin-configuration-file.html -->
+<idea-plugin>
+    <id>com.github.louislou2.jprotobuf</id>
+    <name>JProtobuf Template</name>
+    <vendor>louislou2</vendor>
+
+    <depends>com.intellij.modules.platform</depends>
+    <depends>com.intellij.modules.java</depends>
+
+<!--    <resource-bundle>messages.MyBundle</resource-bundle>-->
+
+<!--    <extensions defaultExtensionNs="com.intellij">-->
+<!--        <toolWindow factoryClass="com.github.louislou2.jprotobuf.toolWindow.MyToolWindowFactory" id="MyToolWindow"/>-->
+<!--    </extensions>-->
+
+<!--    <applicationListeners>-->
+<!--        <listener class="com.github.louislou2.jprotobuf.listeners.MyApplicationActivationListener" topic="com.intellij.openapi.application.ApplicationActivationListener"/>-->
+<!--    </applicationListeners>-->
+    <actions>
+        <action id="HelloWorldActionID" class="com.github.louislou2.jprotobuf.HelloWorldAction" text="Hello World"
+                description="HelloWorldAction">
+            <add-to-group group-id="ToolsMenu" anchor="first"/>
+        </action>
+        <action id="NavToolBarID" class="com.github.louislou2.jprotobuf.NavToolBar" text="NavToolBar_name"
+                description="NavToolBar_desc">
+            <add-to-group group-id="NavBarToolBar" anchor="first"/>
+        </action>
+        <group
+            id="ProtoForCurrent_Group_id"
+            class="com.github.louislou2.jprotobuf.action.ProtoForCurrent_Group"
+            text="Generate Protobuf Class"
+            description="Generate protobuf java class for current java class"
+            popup="true">
+            <add-to-group group-id="EditorPopupMenu" anchor="first"/>
+            <action id="ProtoForCurrentDefault_id" class="com.github.louislou2.jprotobuf.action.ProtoForCurrentDefault" text="Use Specified Directory"
+                    description="Generate protobuf java class for current java class using specified directory"/>
+            <action id="ProtoForCurrentCustom_id" class="com.github.louislou2.jprotobuf.action.ProtoForCurrentCustom"
+                    text="Use Custom Directory" description="Generate protobuf java class for current java class using custom directory"/>
+        </group>
+<!--        <action id="EditerPopForAFile_id" class="com.github.louislou2.jprotobuf.action.ProtoForCurrentDefault" text="Generate Protobuf Java Class"-->
+<!--                description="Generate protobuf java class for current java class">-->
+<!--            <add-to-group group-id="EditorPopupMenu" anchor="first"/>-->
+<!--        </action>-->
+    </actions>
+    <projectListeners>
+        <listener
+                class="com.github.louislou2.jprotobuf.listener.Listener1"
+                topic="com.github.louislou2.jprotobuf.notifier.ChangeNotifier1"/>
+    </projectListeners>
+    <extensions defaultExtensionNs="com.intellij">
+        <applicationConfigurable 
+                parentId="tools"
+                instance="com.github.louislou2.jprotobuf.configurable.MultiConfigurable" 
+                id="com.github.louislou2.jprotobuf.configurable.MultiConfigurable.id"
+                displayName="JProtobuf"/>
+    </extensions>
+</idea-plugin>

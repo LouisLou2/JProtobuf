@@ -1,7 +1,4 @@
 package com.github.louislou2.jprotobuf.model;
-
-import java.util.List;
-
 public class ClassField {
     private String name;// 该字段的类型
     /**

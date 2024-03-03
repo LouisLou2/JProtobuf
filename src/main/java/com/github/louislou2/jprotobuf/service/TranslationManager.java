@@ -1,5 +1,4 @@
 package com.github.louislou2.jprotobuf.service;
-import com.github.louislou2.jprotobuf.model.JavaClassInfo;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiFile;
