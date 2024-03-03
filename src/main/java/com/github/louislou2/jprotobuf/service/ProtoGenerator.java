@@ -1,19 +1,14 @@
 package com.github.louislou2.jprotobuf.service;
 
-import com.github.louislou2.jprotobuf.debugger.FileVisual;
 import com.github.louislou2.jprotobuf.model.JavaClassInfo;
-import com.github.louislou2.jprotobuf.persistent.PluginSettingData;
 import com.github.louislou2.jprotobuf.util.PathVirtualUtil;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.PsiClass;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Objects;
 
 public class ProtoGenerator {
     /**
@@ -22,18 +17,18 @@ public class ProtoGenerator {
      * @return: 返回.proto文件相对于protoDir的相对位置
      * 例如：protoDir="a/b", protoFile="a/b/c/d/user.proto", 返回"c/d/user.proto"
      */
-    public static String writeProtoFile_Default(JavaClassInfo classInfo,Project project,String javaFilePath){
+    public static String writeProtoFile_Default(PsiClass aclass, Project project,String javaFilePath){
         String relaProtoDir=PathManager.getRelaCorProtoDir(javaFilePath);
         String corProtoPath=PathManager.protoDir+"/"+relaProtoDir;
-        String protoFileContent = JavaClassAnalyser.getProtoString(classInfo);
-        String protoFileName = classInfo.getClassName() + ".proto";
+        String protoFileContent = JavaParser.getProtoString(aclass);
+        String protoFileName = JavaParser.getProtoFileName(aclass);
         PlainTextFileWriter.createFile(project, corProtoPath, protoFileName, protoFileContent);
         return relaProtoDir+"/"+protoFileName;
     }
 
     /**
      * 分析提供的classInfo 生成.proto文件内容，并写入targetFolder
-     * @param classInfo
+     * @param aclass
      * @param project
      * @param targetFolder
      */

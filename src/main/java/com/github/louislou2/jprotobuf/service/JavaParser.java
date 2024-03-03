@@ -1,12 +1,7 @@
 package com.github.louislou2.jprotobuf.service;
 
-import com.github.louislou2.jprotobuf.model.ClassField;
-import com.github.louislou2.jprotobuf.model.TypeInfo;
 import com.intellij.psi.*;
 import com.intellij.psi.util.PsiUtil;
-import kotlin.reflect.jvm.internal.impl.load.java.structure.JavaPrimitiveType;
-import org.hamcrest.core.Is;
-import org.jaxen.util.SelfAxisIterator;
 
 import java.util.*;
 
@@ -179,8 +174,6 @@ public class JavaParser {
         int kind=getKind(type);
         if(isStructured(kind)){
             PsiClassType classType=(PsiClassType)type;
-            PsiClass classInfo=classType.resolve();
-            assert classInfo != null;
             //String outerCanon=classInfo.getQualifiedName();
             PsiType[] typeParams=classType.getParameters();
             switch(kind){

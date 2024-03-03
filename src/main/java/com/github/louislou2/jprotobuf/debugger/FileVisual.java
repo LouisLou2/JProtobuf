@@ -1,7 +1,6 @@
 package com.github.louislou2.jprotobuf.debugger;
 
 import com.github.louislou2.jprotobuf.util.PathVirtualUtil;
-import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VfsUtil;
 import com.intellij.openapi.vfs.VirtualFile;
 
