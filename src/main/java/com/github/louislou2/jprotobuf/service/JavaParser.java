@@ -1,5 +1,8 @@
 package com.github.louislou2.jprotobuf.service;
 
+import com.github.louislou2.jprotobuf.constant.FileTypeEnum;
+import com.github.louislou2.jprotobuf.model.CheckResult;
+import com.github.louislou2.jprotobuf.model.TypeKind;
 import com.intellij.psi.*;
 import com.intellij.psi.util.PsiUtil;
 
@@ -51,6 +54,9 @@ public class JavaParser {
     }
     private static boolean isStructured(int kind){
         return kind==ELE1||kind==KV;
+    }
+    private static boolean isBasic(int kind){
+        return kind==BASE||kind==BOX;
     }
     /**
      * 包装类转基本类，例如java.lang.Integer->int
@@ -133,14 +139,70 @@ public class JavaParser {
     public static int getKind4BoxAndSelf(PsiType type){
         return boxTypes.contains(type.getCanonicalText())?BOX:SELF;
     }
-    public static String getProtoString(PsiClass classInfo){
-        String className=classInfo.getName();
+    public static void forSelfCheck(PsiClass aclass,CheckResult res){
+        //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@!!!!!!!!!!!!!!!!!SO IMPORTANT!!!!!!!!!还有就是循环依赖的问题还没解决
+        String defineLoca=PathManager.getDefineLocation(aclass);
+        if(PathManager.inSpecifiedDirWithJPath(defineLoca,FileTypeEnum.PROTO)) return; //正常情况 
+        if(PathManager.inSpecifiedDirWithJPath(defineLoca, FileTypeEnum.POJO)){
+            // TODO:说明需要的.proto文件不存在，但是对应的java类在pojo文件夹，这里就需要放下手头的活，进行解析java为.proto
+        }else{
+            // TODO:能到这里，需要的.proto文件不存在，说明引用的类不在pojo文件夹，这是不可接受的错误
+        }
+        String selfStr =PathManager.getRelaCorProtoPath(defineLoca);
+        res.addTypeKind(TypeKind.makeTypeKind4Self(SELF,selfStr));
+    }
+
+    /**
+     * 要在CodeAnalyser.hasError，先利用此方法检查1.是否存在语法错误，2.同时也可以知道是否引用了未定义类
+     * 目的是检查用户自定义类的引用关系，
+     * 如果发现了引用了一个类，在pojoDir但是不在protoDir，应该连环地，先解析那个类
+     * 如果发现引用一些类，不在pojoDir,应该提醒这是不行的，或者给出选择是否要进行移动
+     * @param aclass
+     * @return
+     */
+    public static CheckResult selfKindPreCheck(PsiClass aclass){
+        PsiField[] fields=aclass.getFields();
+        CheckResult res=new CheckResult(fields.length);
+        String selfStr;
+        for(PsiField field:fields){
+            PsiType type=field.getType();
+            int kind=getKind(type);
+            switch (kind){
+                case BASE,BOX->{
+                    res.addTypeKind(TypeKind.makeTypeKind4Basic(kind));
+                }
+                case SELF -> {
+                    // TODO:开始检查
+                    forSelfCheck(aclass,res);
+                }
+                case ELE1 -> {
+                    PsiClassType classType=(PsiClassType)type;
+                    PsiType[] typeParams=classType.getParameters();
+                    assert typeParams.length==1;
+                    assert getKind(typeParams[0])==SELF;
+                    forSelfCheck(PsiUtil.resolveClassInType(typeParams[0]),res);
+                }
+                case KV->{
+                    PsiClassType classType=(PsiClassType)type;
+                    PsiType[] typeParams=classType.getParameters();
+                    assert typeParams.length==2;
+                    assert getKind(typeParams[0])==SELF;
+                    assert getKind(typeParams[1])==SELF;
+                    forSelfCheck(PsiUtil.resolveClassInType(typeParams[0]),res);
+                    forSelfCheck(PsiUtil.resolveClassInType(typeParams[1]),res);
+                }
+            }
+        }
+        return res;
+    }
+    public static String getProtoString(PsiClass aClass){
+        String className=aClass.getName();
         String messageName=getMessageName(className);
-        String outerClassName=getOuterClassName(classInfo);
+        String outerClassName=getOuterClassName(className);
         StringBuilder header = new StringBuilder();
         StringBuilder content= new StringBuilder();
         content.append("message ").append(messageName).append(" {");
-        var fields=classInfo.getFields();
+        var fields=aClass.getFields();
         Set<String>selfClasses=new HashSet<>();
         String[] selfs;
         for(int i=0;i<fields.length;++i){
@@ -190,8 +252,8 @@ public class JavaParser {
                     int kind0=getKind4BoxAndSelf(typeParams[0]);
                     int kind1=getKind4BoxAndSelf(typeParams[1]);
                     
-                    if(kind0==SELF) selfs[0]=PathManager.getRelaCorProtoPath((PsiClass)typeParams[0],JavaParser::getProtoFileName);
-                    if(kind1==SELF) selfs[1]=PathManager.getRelaCorProtoPath((PsiClass)typeParams[1],JavaParser::getProtoFileName);
+                    if(kind0==SELF) selfs[0]=PathManager.getRelaCorProtoPath(PsiUtil.resolveClassInType(typeParams[0]),JavaParser::getProtoFileName);
+                    if(kind1==SELF) selfs[1]=PathManager.getRelaCorProtoPath(PsiUtil.resolveClassInType(typeParams[0]),JavaParser::getProtoFileName);
                     
                     String protoType1=getSimpleProtoType(typeParams[0],kind0);
                     String protoType2=getSimpleProtoType(typeParams[1],kind1);
@@ -205,7 +267,7 @@ public class JavaParser {
             String baseProtoType=getSimpleProtoType(type,kind);
             builder.append(baseProtoType).append(" ").append(fieldName);
             if(kind==SELF){
-                selfs[0]=type.getCanonicalText();
+                selfs[0]=PathManager.getRelaCorProtoPath((PsiClass)type,JavaParser::getProtoFileName);
                 selfs[1]=null;
             }
         }
@@ -234,12 +296,13 @@ public class JavaParser {
         }
         return true;
     }
+
     /**
-     * @param classInfo
+     * @param className
      * @return .proto文件中java_outer_classname的名字，目前还没有书写用户如何指定，先用以下策略
      */
-    public static String getOuterClassName(PsiClass classInfo){
-        return classInfo.getName()+"Proto";
+    public static String getOuterClassName(String className){
+        return className+"Proto";
     }
 
     /**
@@ -252,10 +315,11 @@ public class JavaParser {
     }
 
     /**
-     * @param classInfo
-     * @return .proto文件的名字，目前还没有书写用户如何指定，先用以下策略
+     * .proto文件的名字，目前还没有书写用户如何指定，先用以下策略
+     * @param className
+     * @return
      */
-    public static String getProtoFileName(PsiClass classInfo){
-        return classInfo.getName()+".proto";
+    public static String getProtoFileName(String className){
+        return className+".proto";
     }
 }

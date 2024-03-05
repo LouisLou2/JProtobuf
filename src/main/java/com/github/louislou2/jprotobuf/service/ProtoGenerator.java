@@ -16,7 +16,7 @@ public class ProtoGenerator {
      * 例如：protoDir="a/b", protoFile="a/b/c/d/user.proto", 返回"c/d/user.proto"
      */
     public static String writeProtoFile_Default(PsiClass aclass, Project project,String javaFilePath){
-        String relaProtoDir=PathManager.getRelaCorProtoDir(javaFilePath);
+        String relaProtoDir=PathManager.getRelaCorDir(javaFilePath);
         String corProtoPath=PathManager.protoDir+"/"+relaProtoDir;
         String protoFileContent = JavaParser.getProtoString(aclass);
         String protoFileName = JavaParser.getProtoFileName(aclass);

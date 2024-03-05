@@ -1,5 +1,6 @@
 package com.github.louislou2.jprotobuf.service;
 
+import com.github.louislou2.jprotobuf.constant.FileTypeEnum;
 import com.github.louislou2.jprotobuf.persistent.PluginSettingData;
 import com.github.louislou2.jprotobuf.persistent.ProjectSettingData;
 import com.github.louislou2.jprotobuf.util.PathVirtualUtil;
@@ -7,12 +8,10 @@ import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiDocumentManager;
 import com.intellij.psi.PsiFile;
-import kotlinx.html.A;
 
 import java.util.function.Function;
 
@@ -37,23 +36,62 @@ public class PathManager {
         protoDirVir = PathVirtualUtil.getVF(protoDir);
         protoClassVir = PathVirtualUtil.getVF(protoClassDir);
     }
+
+    /**
+     * 提供java文件路径，获取三统一规则下
+     * 对应的.proto文件是否在对应文件夹
+     * 或者对应的ProtoClass是否在对应文件夹
+     * @param jpath
+     * @param type
+     * @return
+     */
+    public static boolean inSpecifiedDirWithJPath(String jpath, FileTypeEnum type){
+        if(type==FileTypeEnum.POJO){
+            return jpath.startsWith(pojoDir);
+        }
+        String className=jpath.substring(jpath.lastIndexOf('/')+1,jpath.lastIndexOf('.'));
+        String filePath= switch (type){
+            case PROTO -> protoDir+'/'+getRelaCorDir(jpath)+SpecRules.getProtoFileName.apply(className);
+            case PROTO_CLASS -> protoClassDir+'/'+getRelaCorDir(jpath)+SpecRules.getProtoFileName.apply(className);
+            default -> throw new IllegalStateException("Unexpected value: " + type);
+        };
+        return PathVirtualUtil.getVF(filePath)!=null;
+    }
+
+    /**
+     * 
+     * @param path 与type对应的path, 例如type=FileTYpeEnum.SELF, path应该形式类似：a/b/c/d/SelfDefined.java
+     * @param type
+     * @return
+     */
+    public static boolean inSpecifiedDir(String path, FileTypeEnum type){
+        String prefix=switch (type){
+            case POJO -> pojoDir;
+            case PROTO -> protoDir;
+            case PROTO_CLASS -> protoClassDir;
+        };
+        return path.startsWith(prefix);
+    }
     public static String getDefineLocation(PsiClass aClass){
         return aClass.getNavigationElement().getContainingFile().getVirtualFile().getPath();
     }
-    public static String getRelaCorProtoPath(PsiClass aClass, Function<PsiClass,String>getFileName){
-        String theJavaPath=getDefineLocation(aClass);
-        return getRelaCorProtoDir(theJavaPath)+'/'+getFileName.apply(aClass);
+    public static String getRelaCorProtoPath(String jpath){
+        return getRelaCorDir(jpath)+'/'+SpecRules.getProtoFileName.apply(jpath);
+    }
+    public static String getRelaCorProtoPath(PsiClass aClass){
+        String jpath=getDefineLocation(aClass);
+        return getRelaCorDir(jpath)+'/'+SpecRules.getProtoFileName.apply(aClass.getName());
     }
     /**
      * 在三结构统一的规则下
      * 获取.proto文件所在的文件夹相对于protoDir的相对路径,前后都不带/
      * 例如它的位置是  protoDir/a/b/c/user.proto  则该方法会返回a/b/c
-     * @param theJavaPath
+     * @param jpath
      * @return
      */
-    public static String getRelaCorProtoDir(String theJavaPath){
-        int lastSlashIndex=theJavaPath.lastIndexOf('/');
-        return theJavaPath.substring(pojoDir.length()+1, lastSlashIndex);
+    public static String getRelaCorDir(String jpath){
+        int lastSlashIndex=jpath.lastIndexOf('/');
+        return jpath.substring(pojoDir.length()+1, lastSlashIndex);
     }
     public static PsiFile getPsiFileNowEditing(Project project){
         Editor editor = FileEditorManager.getInstance(project).getSelectedTextEditor();
@@ -73,25 +111,4 @@ public class PathManager {
         assert editor != null;
         return editor.getVirtualFile().getPath();//结果形式: D:/SourceCode/a/User.java
     }
-    //public static String getCorProtoDirByRela(String relaPath){
-    //    return protoDir+"/"+relaPath;
-    //}
-    //public static String ggetCorProtoDir(String theJavaPath){
-    //    int lastSlashIndex=theJavaPath.lastIndexOf('/');
-    //    return protoDir+theJavaPath.substring(pojoDir.length(), lastSlashIndex);
-    //    //不用replace，比对较多
-    //    //return theDir.replace(pojoDirVir.getPath(),protoDirVir.getPath());
-    //}
-    //public static String getCorProtoClassPath(String theJavaPath){
-    //    int lastSlashIndex=theJavaPath.lastIndexOf('/');
-    //    return protoClassDir+theJavaPath.substring(pojoDir.length(), lastSlashIndex);
-    //}
-    //public static void testPath(Project project) {
-    //    String protocPath= PluginSettingData.getInstance().getState().applicationSettingData.getProtocPath();
-    //    VirtualFile protocVir = PathVirtualUtil.getVF(protocPath);
-    //    System.out.println(protocVir.getPath());
-    //    Editor editor = FileEditorManager.getInstance(project).getSelectedTextEditor();
-    //    VirtualFile nowEditingVir=FileDocumentManager.getInstance().getFile(editor.getDocument());
-    //    System.out.println(nowEditingVir.getPath());
-    //}
 }

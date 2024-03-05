@@ -18,11 +18,11 @@ public class TranslationManager {
         PsiClass aclass=PsiAnalyser.getPsiClass(nowEditing);
         
         // 获取生成文件的路径：使用在设置中设置管理目录，依照nowEditingPath 推算出结果文件应该存放的目录
-        String relaThisProtoDir=PathManager.getRelaCorProtoDir(nowEditingPath);
+        String relaThisProtoDir=PathManager.getRelaCorDir(nowEditingPath);
         String protoTargetFolder=PathManager.protoDir+"/"+relaThisProtoDir; //.proto文件应该存放的目录
         
         String searchingFolder=PathManager.protoDir;//protoc命令的搜索目录
-        String relaProtoFilePath=relaThisProtoDir+"/"+JavaParser.getProtoFileName(aclass);//.proto文件相对于searchingFolder的相对路径
+        String relaProtoFilePath=relaThisProtoDir+"/"+JavaParser.getProtoFileName(aclass.getName());//.proto文件相对于searchingFolder的相对路径
         String distDir=PathManager.protoClassDir+"/"+relaThisProtoDir;// 目标Protofied Class的存放目录
         
         //开始书写文件
