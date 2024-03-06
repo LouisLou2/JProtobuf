@@ -19,7 +19,7 @@ public class ProtoGenerator {
         String relaProtoDir=PathManager.getRelaCorDir(javaFilePath);
         String corProtoPath=PathManager.protoDir+"/"+relaProtoDir;
         String protoFileContent = JavaParser.getProtoString(aclass);
-        String protoFileName = JavaParser.getProtoFileName(aclass);
+        String protoFileName = SpecRules.getProtoFileName.apply(aclass.getName());
         PlainTextFileWriter.createFile(project, corProtoPath, protoFileName, protoFileContent);
         return relaProtoDir+"/"+protoFileName;
     }
@@ -30,9 +30,9 @@ public class ProtoGenerator {
      * @param project
      * @param targetFolder
      */
-    public static void writeProtoFile(PsiClass aclass, Project project, String targetFolder){
+    public static void writeProtoFile(PsiClass aclass, Project project, String targetFolder) throws IllegalArgumentException{
         String protoFileContent = JavaParser.getProtoString(aclass);
-        String protoFileName = JavaParser.getProtoFileName(aclass);
+        String protoFileName = SpecRules.getProtoFileName.apply(aclass.getName());
         PlainTextFileWriter.createFile(project, targetFolder, protoFileName, protoFileContent);
     }
     public static void writeProtoClassByProtoFile(String searchingFolder,String relaProtoFilePath,String distDir){

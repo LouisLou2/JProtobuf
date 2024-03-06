@@ -1,0 +1,79 @@
+/**
+     * 此类目前只能解决不嵌套或者一层数据结构嵌套
+     * @param field
+     * @param builder
+     * @param order
+     */
+    // TODO:还未做.protobuf的import语句
+    private static String[] parseStr4Nesting1(PsiField field,PsiClass wrapClass, StringBuilder builder, int order){
+        assert fieldPromise(field);
+        String[]selfs=new String[2];// 最多出现两个需要import的SELF
+        builder.append("\n    ");
+        
+        String fieldName=field.getName();
+        PsiType type=field.getType();
+        int kind=getKind(type,wrapClass);
+        if(isStructured(kind)){
+            PsiClassType classType=(PsiClassType)type;
+            //String outerCanon=classInfo.getQualifiedName();
+            PsiType[] typeParams=classType.getParameters();
+            switch(kind){
+                case ELE1->{
+                    // ELE1种类他们的泛型参数只有1个
+                    assert typeParams.length==1;
+                    int parakind= getKind4BoxAndDef(typeParams[0]);
+                    String protoType=getSimpleProtoType(typeParams[0],parakind);
+                    if(parakind== DEF) selfs[0]=PathManager.getRelaCorProtoPath(PsiUtil.resolveClassInType(typeParams[0]),JavaParser::getProtoFileName);
+                    builder.append("repeated ").append(protoType).append(" ").append(fieldName);
+                }
+                case KV->{
+                    assert typeParams.length==2;
+                    int kind0= getKind4BoxAndDef(typeParams[0]);
+                    int kind1= getKind4BoxAndDef(typeParams[1]);
+                    
+                    if(kind0== DEF) selfs[0]=PathManager.getRelaCorProtoPath(PsiUtil.resolveClassInType(typeParams[0]),JavaParser::getProtoFileName);
+                    if(kind1== DEF) selfs[1]=PathManager.getRelaCorProtoPath(PsiUtil.resolveClassInType(typeParams[0]),JavaParser::getProtoFileName);
+                    
+                    String protoType1=getSimpleProtoType(typeParams[0],kind0);
+                    String protoType2=getSimpleProtoType(typeParams[1],kind1);
+                    builder.append("map<").append(protoType1).append(", ").append(protoType2).append("> ").append(fieldName);
+                }
+                default -> {
+                    // this is unbearable and impossible;
+                }
+            }
+        }else{
+            String baseProtoType=getSimpleProtoType(type,kind);
+            builder.append(baseProtoType).append(" ").append(fieldName);
+            if(kind== DEF){
+                selfs[0]=PathManager.getRelaCorProtoPath((PsiClass)type,JavaParser::getProtoFileName);
+                selfs[1]=null;
+            }
+        }
+        builder.append(" = ").append(order).append(';');
+        return selfs;
+    }
+    
+    
+    //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+    /**
+         * 因为太过复杂的java解析还做不到，先从简单地入手
+         * 这个方法定义ClassField的限制：
+         * 1.最多支持一层嵌套即例如Map<Integer,String>
+         * @param field
+         * @return
+         */
+        private static boolean fieldPromise(PsiField field){
+            PsiType type=field.getType();
+            int kind=getKind(type);
+            if(isStructured(kind)){
+                PsiClassType classType=(PsiClassType)type;
+                PsiClass classInfo=classType.resolve();
+                assert classInfo != null;
+                PsiType[] typeParams=classType.getParameters();
+                for(var ty:typeParams){
+                    if(isStructured(getKind(ty)))return false;
+                }
+            }
+            return true;
+        }

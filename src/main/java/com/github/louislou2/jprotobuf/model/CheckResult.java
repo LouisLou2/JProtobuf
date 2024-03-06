@@ -13,4 +13,10 @@ public class CheckResult {
         assert kinds.size()<num;
         kinds.add(kind);
     }
+    public List<TypeKind> getKinds(){
+        return kinds;
+    }
+    public int getNum(){
+        return num;
+    }
 }

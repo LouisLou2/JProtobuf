@@ -3,6 +3,7 @@ package com.github.louislou2.jprotobuf.service;
 import com.github.louislou2.jprotobuf.constant.FileTypeEnum;
 import com.github.louislou2.jprotobuf.model.CheckResult;
 import com.github.louislou2.jprotobuf.model.TypeKind;
+import com.intellij.openapi.util.Pair;
 import com.intellij.psi.*;
 import com.intellij.psi.util.PsiUtil;
 
@@ -19,9 +20,10 @@ public class JavaParser {
     private static final String map="java.util.Map";
     private static final int BASE=0; // 基本数据类型
     private static final int BOX=1; // 基本数据类型包装类
-    private static final int SELF=2; // 自定义类
-    private static final int ELE1=3; // 包含一个类型参数的Collection
-    private static final int KV=4; //键值对集合，各种Table
+    private static final int DEF =2; // 自定义类
+    private static final int SELF=3;
+    private static final int ELE1=4;// 包含一个类型参数的Collection
+    private static final int KV=5; //键值对集合，各种Table
     
     static{
         typeMap=new HashMap<>();//因为不会出现多个线程同时修改该map，不用担心线程安全性
@@ -71,18 +73,19 @@ public class JavaParser {
     }
 
     /**
-     * 此方法仅仅用来处理[基本数据类型][包装类]以及[用户自定义类]
+     * 此方法仅仅用来处理[基本数据类型][包装类]以及[用户自定义类][此类本身]
      * 其他均不服务
      * @param type
      * @param kind
      * @return
      */
-    private static String getSimpleProtoType(PsiType type,int kind){
+    private static String getSimpleProtoType(PsiType type,int kind,PsiClass wrapClass){
         String canonicalName=type.getCanonicalText();
-        assert kind==BASE||kind==BOX||kind==SELF;
-        if(kind==SELF){
+        assert kind==BASE||kind==BOX||kind== DEF||kind==SELF;
+        if(kind== DEF)
             return getMessageName(type.getPresentableText());
-        }
+        if(kind== SELF)
+            return wrapClass.getName();
         String name=kind==BASE?canonicalName:getUnboxingType(canonicalName);
         return typeMap.get(name);
     }
@@ -95,7 +98,7 @@ public class JavaParser {
      * TODO:这里也许可以考虑将他们做成常量,一会再说吧
      * @return
      */
-    public static int getKind(PsiType type){
+    public static int getKind(PsiType type,PsiClass wrapClass){
         // 注意是PsiPrimitiveType不是JavaPrimitiveType
         if(type instanceof PsiPrimitiveType){
             //表明是基本类型
@@ -109,16 +112,19 @@ public class JavaParser {
         PsiClass classInfo=classType.resolve();
         assert classInfo != null;
         String outerCanon=classInfo.getQualifiedName();
-        if(outerCanon==list||outerCanon==vector||outerCanon==set)
+        assert outerCanon != null;
+        if(outerCanon.equals(wrapClass.getQualifiedName()))
+            return SELF;
+        if(outerCanon.equals(list)|| outerCanon.equals(vector) || outerCanon.equals(set))
             return ELE1;
-        if(outerCanon==map)
+        if(outerCanon.equals(map))
             return KV;
         /*
         说明可能是用户自定义类，但是这里也有Java其他数据结构的嫌疑，
         因为在上面判断的数据结构类型只有几个.这里姑且当做就是用户自定义类吧
         TODO: 进一步判断
          */
-        return SELF;
+        return DEF;
     }
 
     /**
@@ -127,7 +133,7 @@ public class JavaParser {
      * @return
      */
     //public static String getStrKind4BoxAndSelf(PsiType type){
-    //    int kind = boxTypes.contains(type.getCanonicalText())?BOX:SELF;
+    //    int kind = boxTypes.contains(type.getCanonicalText())?BOX:DEF;
     //    return getSimpleProtoType(type.getCanonicalText(),kind);
     //}
 
@@ -136,20 +142,62 @@ public class JavaParser {
      * @param type
      * @return
      */
-    public static int getKind4BoxAndSelf(PsiType type){
-        return boxTypes.contains(type.getCanonicalText())?BOX:SELF;
+    public static int getKind4BoxAndDef(PsiType type){
+        return boxTypes.contains(type.getCanonicalText())?BOX: DEF;
     }
-    public static void forSelfCheck(PsiClass aclass,CheckResult res){
-        //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@!!!!!!!!!!!!!!!!!SO IMPORTANT!!!!!!!!!还有就是循环依赖的问题还没解决
+
+    /**
+     * 这个方法为了检查此自定义类，即DEF类
+     * 并将必要的结果
+     * @param aclass
+     */
+    public static TypeKind forDefCheck(PsiClass aclass) throws IllegalArgumentException{
+        // TODO:在很长的泛型参数链中检测循环依赖的问题确实没解决
         String defineLoca=PathManager.getDefineLocation(aclass);
-        if(PathManager.inSpecifiedDirWithJPath(defineLoca,FileTypeEnum.PROTO)) return; //正常情况 
         if(PathManager.inSpecifiedDirWithJPath(defineLoca, FileTypeEnum.POJO)){
-            // TODO:说明需要的.proto文件不存在，但是对应的java类在pojo文件夹，这里就需要放下手头的活，进行解析java为.proto
+            if(!PathManager.inSpecifiedDirWithJPath(defineLoca,FileTypeEnum.PROTO))
+                // TODO:说明需要的.proto文件不存在，但是对应的java类在pojo文件夹，这里就需要放下手头的活，进行解析java为.proto
+                ProtoGenerator.writeProtoFile(aclass,aclass.getProject(),PathManager.protoDir+"/"+PathManager.getRelaCorDir(defineLoca));
         }else{
-            // TODO:能到这里，需要的.proto文件不存在，说明引用的类不在pojo文件夹，这是不可接受的错误
+            // 能到这里，需要的.proto文件不存在，说明引用的类不在pojo文件夹，这是不可接受的错误
+            // 终止一切操作，抛出异常，异常会层层向上传递
+            throw new IllegalArgumentException("错误原因:引用了不在pojo文件夹的类");
         }
         String selfStr =PathManager.getRelaCorProtoPath(defineLoca);
-        res.addTypeKind(TypeKind.makeTypeKind4Self(SELF,selfStr));
+        return TypeKind.makeTypeKind4Define(DEF,selfStr);
+    }
+
+    /**
+     * invoked only when atype is ELE1
+     * @param atype
+     * @param wrapClass
+     */
+    public static TypeKind forELE1Check(PsiType atype,PsiClass wrapClass){
+        PsiClassType classType=(PsiClassType)atype;
+        PsiType[] typeParams=classType.getParameters();
+        assert typeParams.length==1;
+        int kind=getKind(typeParams[0],wrapClass);
+        assert kind== DEF||kind== SELF;
+        if(kind==SELF){
+            return TypeKind.makeTypeKind4ELE1(ELE1,TypeKind.makeTypeKind4Basic(kind));
+        }
+        TypeKind param=forDefCheck(PsiUtil.resolveClassInType(typeParams[0]));
+        return TypeKind.makeTypeKind4ELE1(ELE1,param);
+    }
+    public static TypeKind forKVCheck(PsiType atype,PsiClass wrapClass){
+        PsiClassType classType=(PsiClassType)atype;
+        PsiType[] typeParams=classType.getParameters();
+        assert typeParams.length==2;
+        int kind1=getKind(typeParams[0],wrapClass);
+        int kind2=getKind(typeParams[1],wrapClass);
+        assert (kind1 == DEF||kind1==SELF)&&(kind2 == DEF||kind2==SELF);
+        TypeKind param1;
+        TypeKind param2;
+        if(kind1==SELF) param1=TypeKind.makeTypeKind4Basic(SELF);
+        else param1= forDefCheck(PsiUtil.resolveClassInType(typeParams[0]));
+        if(kind1==SELF) param2=TypeKind.makeTypeKind4Basic(SELF);
+        else param2= forDefCheck(PsiUtil.resolveClassInType(typeParams[1]));
+        return TypeKind.makeTypeKind4KV(KV,new Pair<>(param1,param2));
     }
 
     /**
@@ -160,141 +208,80 @@ public class JavaParser {
      * @param aclass
      * @return
      */
-    public static CheckResult selfKindPreCheck(PsiClass aclass){
+    public static CheckResult kindPreCheck(PsiClass aclass) throws IllegalArgumentException{
         PsiField[] fields=aclass.getFields();
         CheckResult res=new CheckResult(fields.length);
         String selfStr;
         for(PsiField field:fields){
             PsiType type=field.getType();
-            int kind=getKind(type);
+            int kind=getKind(type,aclass);
             switch (kind){
-                case BASE,BOX->{
+                case BASE,BOX,SELF->{
                     res.addTypeKind(TypeKind.makeTypeKind4Basic(kind));
                 }
-                case SELF -> {
+                case DEF -> {
                     // TODO:开始检查
-                    forSelfCheck(aclass,res);
+                    res.addTypeKind(forDefCheck(aclass));
                 }
                 case ELE1 -> {
-                    PsiClassType classType=(PsiClassType)type;
-                    PsiType[] typeParams=classType.getParameters();
-                    assert typeParams.length==1;
-                    assert getKind(typeParams[0])==SELF;
-                    forSelfCheck(PsiUtil.resolveClassInType(typeParams[0]),res);
+                    res.addTypeKind(forELE1Check(type,aclass));
                 }
                 case KV->{
-                    PsiClassType classType=(PsiClassType)type;
-                    PsiType[] typeParams=classType.getParameters();
-                    assert typeParams.length==2;
-                    assert getKind(typeParams[0])==SELF;
-                    assert getKind(typeParams[1])==SELF;
-                    forSelfCheck(PsiUtil.resolveClassInType(typeParams[0]),res);
-                    forSelfCheck(PsiUtil.resolveClassInType(typeParams[1]),res);
+                    res.addTypeKind(forKVCheck(type,aclass));
+                }
+                default->{
+                    throw new IllegalArgumentException("error java type");
                 }
             }
         }
         return res;
     }
-    public static String getProtoString(PsiClass aClass){
-        String className=aClass.getName();
+    public static String getProtoString(PsiClass aclass) throws IllegalArgumentException{
+        CheckResult res= kindPreCheck(aclass);
+        
+        String className=aclass.getName();
         String messageName=getMessageName(className);
         String outerClassName=getOuterClassName(className);
         StringBuilder header = new StringBuilder();
         StringBuilder content= new StringBuilder();
+        header.append("syntax = \"proto3\";\n\n").append("\noption java_outer_classname = ").append('\"').append(outerClassName).append("\";\n\n");
         content.append("message ").append(messageName).append(" {");
-        var fields=aClass.getFields();
-        Set<String>selfClasses=new HashSet<>();
-        String[] selfs;
-        for(int i=0;i<fields.length;++i){
-            selfs=parseStr4Nesting(fields[i], content, i+1);
-            for(var self:selfs){
-                if(self!=null)selfClasses.add(self);
-            }
-        }
+        var fields=aclass.getFields();
+        parseStr4Nesting(fields,res,aclass,header,content,1);
         content.append("\n}");
-        header.append("syntax = \"proto3\";\n\n");
-        selfClasses.forEach(self-> header.append("import \"").append(self).append("\";\n"));
-        header.append("\noption java_outer_classname = ");
-        header.append('\"'+outerClassName+"\";\n\n");
         return header +content.toString();
     }
-
-    /**
-     * 此类目前只能解决不嵌套或者一层数据结构嵌套
-     * @param field
-     * @param builder
-     * @param order
-     */
-    // TODO:还未做.protobuf的import语句
-    private static String[] parseStr4Nesting(PsiField field, StringBuilder builder, int order){
-        assert fieldPromise(field);
-        String[]selfs=new String[2];// 最多出现两个需要import的SELF
-        builder.append("\n    ");
-        
-        String fieldName=field.getName();
-        PsiType type=field.getType();
-        int kind=getKind(type);
-        if(isStructured(kind)){
-            PsiClassType classType=(PsiClassType)type;
-            //String outerCanon=classInfo.getQualifiedName();
-            PsiType[] typeParams=classType.getParameters();
-            switch(kind){
+    public static void parseStr4Nesting(PsiField[] fields,CheckResult res,PsiClass wrapClass,StringBuilder importBuilder, StringBuilder contentBuilder, int orderStart){
+        List<TypeKind>kinds=res.getKinds();
+        assert fields.length==kinds.size();
+        for(int i=0;i<fields.length;++i){
+            contentBuilder.append("\n    ");
+            int kind=kinds.get(i).getKind();
+            String fieldName=fields[i].getName();
+            PsiType type=fields[i].getType();
+            switch (kind){
+                case BASE,BOX,SELF,DEF->{
+                    String baseProtoType=getSimpleProtoType(type,kind,wrapClass);
+                    contentBuilder.append(baseProtoType).append(" ").append(fieldName);
+                    if(kind==DEF) importBuilder.append("import \"").append(kinds.get(i).getDefLoca()).append("\";\n");
+                }
                 case ELE1->{
-                    // ELE1种类他们的泛型参数只有1个
-                    assert typeParams.length==1;
-                    int parakind=getKind4BoxAndSelf(typeParams[0]);
-                    String protoType=getSimpleProtoType(typeParams[0],parakind);
-                    if(parakind==SELF) selfs[0]=PathManager.getRelaCorProtoPath(PsiUtil.resolveClassInType(typeParams[0]),JavaParser::getProtoFileName);
-                    builder.append("repeated ").append(protoType).append(" ").append(fieldName);
+                    TypeKind param=kinds.get(i).getParam();
+                    contentBuilder.append("repeated ");
+                    contentBuilder.append(getSimpleProtoType(type,kind,wrapClass)).append(" ").append(fieldName);
+                    if(param.getKind()==DEF) importBuilder.append("import \"").append(param.getDefLoca()).append("\";\n");
                 }
                 case KV->{
-                    assert typeParams.length==2;
-                    int kind0=getKind4BoxAndSelf(typeParams[0]);
-                    int kind1=getKind4BoxAndSelf(typeParams[1]);
-                    
-                    if(kind0==SELF) selfs[0]=PathManager.getRelaCorProtoPath(PsiUtil.resolveClassInType(typeParams[0]),JavaParser::getProtoFileName);
-                    if(kind1==SELF) selfs[1]=PathManager.getRelaCorProtoPath(PsiUtil.resolveClassInType(typeParams[0]),JavaParser::getProtoFileName);
-                    
-                    String protoType1=getSimpleProtoType(typeParams[0],kind0);
-                    String protoType2=getSimpleProtoType(typeParams[1],kind1);
-                    builder.append("map<").append(protoType1).append(", ").append(protoType2).append("> ").append(fieldName);
-                }
-                default -> {
-                    // this is unbearable and impossible;
+                    Pair<TypeKind,TypeKind> params=kinds.get(i).getParams();
+                    contentBuilder.append("map<");
+                    contentBuilder.append(getSimpleProtoType(type,kind,wrapClass)).append(", ");
+                    contentBuilder.append(getSimpleProtoType(type,kind,wrapClass)).append("> ").append(fieldName);
+                    if(params.getFirst().getKind()==DEF) importBuilder.append("import \"").append(params.getFirst().getDefLoca()).append("\";\n");
+                    if(params.getSecond().getKind()==DEF) importBuilder.append("import \"").append(params.getSecond().getDefLoca()).append("\";\n");
                 }
             }
-        }else{
-            String baseProtoType=getSimpleProtoType(type,kind);
-            builder.append(baseProtoType).append(" ").append(fieldName);
-            if(kind==SELF){
-                selfs[0]=PathManager.getRelaCorProtoPath((PsiClass)type,JavaParser::getProtoFileName);
-                selfs[1]=null;
-            }
+            contentBuilder.append(" = ").append(orderStart+i).append(';');
         }
-        builder.append(" = ").append(order).append(';');
-        return selfs;
-    }
-
-    /**
-     * 因为太过复杂的java解析还做不到，先从简单地入手
-     * 这个方法定义ClassField的限制：
-     * 1.最多支持一层嵌套即例如Map<Integer,String>
-     * @param field
-     * @return
-     */
-    private static boolean fieldPromise(PsiField field){
-        PsiType type=field.getType();
-        int kind=getKind(type);
-        if(isStructured(kind)){
-            PsiClassType classType=(PsiClassType)type;
-            PsiClass classInfo=classType.resolve();
-            assert classInfo != null;
-            PsiType[] typeParams=classType.getParameters();
-            for(var ty:typeParams){
-                if(isStructured(getKind(ty)))return false;
-            }
-        }
-        return true;
     }
 
     /**

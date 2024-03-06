@@ -1,0 +1,12 @@
+1.JavaParser::forDefCheck 中循环泛型参数还没解决，例如:
+class A{
+    List<B> list;
+}
+class B{
+    List<A> list;
+}
+这种在java中是合法的，感觉禁止这样有些不合理，但是还没找到方法如何在proto中支持循环依赖
+
+2.更新文件，当有时A.proto 或者AProto.java要更新，目前会出错，因为现在是新建文件，而不是更新文件，这个问题还没解决
+
+3.对一个文件夹的集体更新，还没实现

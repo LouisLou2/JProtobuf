@@ -86,9 +86,13 @@ public class PathManager {
      * 在三结构统一的规则下
      * 获取.proto文件所在的文件夹相对于protoDir的相对路径,前后都不带/
      * 例如它的位置是  protoDir/a/b/c/user.proto  则该方法会返回a/b/c
-     * @param jpath
+     * @param aclass
      * @return
      */
+    public static String getRelaCorDir(PsiClass aclass){
+        String jpath=getDefineLocation(aclass);
+        return getRelaCorDir(jpath);
+    }
     public static String getRelaCorDir(String jpath){
         int lastSlashIndex=jpath.lastIndexOf('/');
         return jpath.substring(pojoDir.length()+1, lastSlashIndex);
