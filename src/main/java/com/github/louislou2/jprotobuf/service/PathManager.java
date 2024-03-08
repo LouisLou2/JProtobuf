@@ -76,7 +76,8 @@ public class PathManager {
         return aClass.getNavigationElement().getContainingFile().getVirtualFile().getPath();
     }
     public static String getRelaCorProtoPath(String jpath){
-        return getRelaCorDir(jpath)+'/'+SpecRules.getProtoFileName.apply(jpath);
+        String className=jpath.substring(jpath.lastIndexOf('/')+1,jpath.lastIndexOf('.'));
+        return getRelaCorDir(jpath)+'/'+SpecRules.getProtoFileName.apply(className);
     }
     public static String getRelaCorProtoPath(PsiClass aClass){
         String jpath=getDefineLocation(aClass);

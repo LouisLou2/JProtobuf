@@ -43,6 +43,6 @@ public class TranslationManager {
         PsiClass aclass=PsiAnalyser.getPsiClass(javaPsi);
         //开始书写文件
         ProtoGenerator.writeProtoFile(aclass,project,protoTarget);
-        ProtoGenerator.writeProtoClassByProtoFile(protoTarget, JavaParser.getProtoFileName(aclass),classDist);
+        ProtoGenerator.writeProtoClassByProtoFile(protoTarget, SpecRules.getProtoFileName.apply(aclass.getName()),classDist);
     }
 }

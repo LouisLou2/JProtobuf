@@ -35,6 +35,13 @@ public class ProtoGenerator {
         String protoFileName = SpecRules.getProtoFileName.apply(aclass.getName());
         PlainTextFileWriter.createFile(project, targetFolder, protoFileName, protoFileContent);
     }
+
+    /**
+     * 而protoc编译器自动就是这个原理，对于已存在的文件，它的策略就是更新内容，不存在才创建
+     * @param searchingFolder
+     * @param relaProtoFilePath
+     * @param distDir
+     */
     public static void writeProtoClassByProtoFile(String searchingFolder,String relaProtoFilePath,String distDir){
         PathVirtualUtil.createDirIfNonexistent(distDir);
         ApplicationManager.getApplication().runWriteAction(() -> {

@@ -26,8 +26,9 @@ public class PlainTextFileWriter {
             return;
         }
         ApplicationManager.getApplication().runWriteAction(()-> {
-            // Your write operation goes here.
-            PsiFile psiFile = psiDirectory.createFile(fileName);
+            // 如果已经存在就直接改写内容，不存在才新建,而protoc编译器自动就是这个策略，对于已存在的文件，它的策略就是更新，不存在才创建
+            PsiFile psiFile=psiDirectory.findFile(fileName);
+            if(psiFile==null)psiFile = psiDirectory.createFile(fileName);
             PsiDocumentManager psiDocumentManager = PsiDocumentManager.getInstance(proj);
 
             // 获取一个文档对象，用于操作文件内容

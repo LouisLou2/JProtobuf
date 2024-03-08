@@ -149,9 +149,10 @@ public class JavaParser {
     /**
      * 这个方法为了检查此自定义类，即DEF类
      * 并将必要的结果
-     * @param aclass
+     * @param type
      */
-    public static TypeKind forDefCheck(PsiClass aclass) throws IllegalArgumentException{
+    public static TypeKind forDefCheck(PsiType type,PsiClass wrapClass) throws IllegalArgumentException{
+        PsiClass aclass=PsiUtil.resolveClassInType(type);
         // TODO:在很长的泛型参数链中检测循环依赖的问题确实没解决
         String defineLoca=PathManager.getDefineLocation(aclass);
         if(PathManager.inSpecifiedDirWithJPath(defineLoca, FileTypeEnum.POJO)){
@@ -181,7 +182,7 @@ public class JavaParser {
         if(kind==SELF){
             return TypeKind.makeTypeKind4ELE1(ELE1,TypeKind.makeTypeKind4Basic(kind));
         }
-        TypeKind param=forDefCheck(PsiUtil.resolveClassInType(typeParams[0]));
+        TypeKind param=forDefCheck(atype,wrapClass);
         return TypeKind.makeTypeKind4ELE1(ELE1,param);
     }
     public static TypeKind forKVCheck(PsiType atype,PsiClass wrapClass){
@@ -194,9 +195,9 @@ public class JavaParser {
         TypeKind param1;
         TypeKind param2;
         if(kind1==SELF) param1=TypeKind.makeTypeKind4Basic(SELF);
-        else param1= forDefCheck(PsiUtil.resolveClassInType(typeParams[0]));
+        else param1= forDefCheck(atype,wrapClass);
         if(kind1==SELF) param2=TypeKind.makeTypeKind4Basic(SELF);
-        else param2= forDefCheck(PsiUtil.resolveClassInType(typeParams[1]));
+        else param2= forDefCheck(atype,wrapClass);
         return TypeKind.makeTypeKind4KV(KV,new Pair<>(param1,param2));
     }
 
@@ -211,7 +212,6 @@ public class JavaParser {
     public static CheckResult kindPreCheck(PsiClass aclass) throws IllegalArgumentException{
         PsiField[] fields=aclass.getFields();
         CheckResult res=new CheckResult(fields.length);
-        String selfStr;
         for(PsiField field:fields){
             PsiType type=field.getType();
             int kind=getKind(type,aclass);
@@ -221,7 +221,7 @@ public class JavaParser {
                 }
                 case DEF -> {
                     // TODO:开始检查
-                    res.addTypeKind(forDefCheck(aclass));
+                    res.addTypeKind(forDefCheck(type,aclass));
                 }
                 case ELE1 -> {
                     res.addTypeKind(forELE1Check(type,aclass));
